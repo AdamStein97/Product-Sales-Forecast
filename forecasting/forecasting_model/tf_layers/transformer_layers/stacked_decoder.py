@@ -4,37 +4,31 @@ from forecasting.forecasting_model.tf_layers.transformer_layers.decoder_layer im
 
 
 class Decoder(tf.keras.layers.Layer):
-    def __init__(self, num_layers, d_model, num_heads, dff,
-                 maximum_position_encoding, rate=0.1):
+    def __init__(self,  window_out=30, num_layers=1, dim_model=256, num_heads=8, dim_ff=1024,
+                 dropout_rate=0.1, **kwargs):
         super(Decoder, self).__init__()
 
-        self.d_model = d_model
+        self.dim_model = dim_model
         self.num_layers = num_layers
 
-        self.embedding = tf.keras.layers.Dense(d_model)
-        self.pos_encoding = positional_encoding(maximum_position_encoding, d_model)
+        self.embedding_dense = tf.keras.layers.Dense(dim_model)
+        self.pos_encoding = positional_encoding(window_out, dim_model)
 
-        self.dec_layers = [DecoderLayer(d_model, num_heads, dff, rate)
+        self.dec_layers = [DecoderLayer(dim_model, num_heads, dim_ff, dropout_rate)
                            for _ in range(num_layers)]
-        self.dropout = tf.keras.layers.Dropout(rate)
+        self.dropout = tf.keras.layers.Dropout(dropout_rate)
 
-    def call(self, x, enc_output, training,
-             look_ahead_mask, padding_mask):
+    def call(self, x, enc_output, look_ahead_mask, training=True):
         seq_len = tf.shape(x)[1]
-        attention_weights = {}
 
-        x = self.embedding(x)  # (batch_size, target_seq_len, d_model)
-        x *= tf.math.sqrt(tf.cast(self.d_model, tf.float32))
+        x = self.embedding_dense(x)  # (batch_size, target_seq_len, d_model)
+        x *= tf.math.sqrt(tf.cast(self.dim_model, tf.float32))
         x += self.pos_encoding[:, :seq_len, :]
 
         x = self.dropout(x, training=training)
 
         for i in range(self.num_layers):
-            x, block1, block2 = self.dec_layers[i](x, enc_output, training,
-                                                   look_ahead_mask, padding_mask)
-
-            attention_weights['decoder_layer{}_block1'.format(i + 1)] = block1
-            attention_weights['decoder_layer{}_block2'.format(i + 1)] = block2
+            x = self.dec_layers[i](x, enc_output, look_ahead_mask, training)
 
         # x.shape == (batch_size, target_seq_len, d_model)
-        return x, attention_weights
+        return x
