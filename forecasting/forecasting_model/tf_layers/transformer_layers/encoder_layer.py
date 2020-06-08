@@ -4,25 +4,31 @@ from forecasting.forecasting_model.tf_layers.transformer_layers.multi_head_atten
 from forecasting.forecasting_model.tf_layers.transformer_layers.feed_forward import FeedFoward
 
 class EncoderLayer(tf.keras.layers.Layer):
-    def __init__(self, d_model, num_heads, dff, rate=0.1):
+    def __init__(self, dim_model=256, num_heads=8, dim_ff=1024, dropout_rate=0.1):
         super(EncoderLayer, self).__init__()
 
-        self.mha = MultiHeadAttention(d_model, num_heads)
-        self.ffn = FeedFoward(d_model, dff)
+        self.self_mha = MultiHeadAttention(dim_model, num_heads)
+        self.ffn = FeedFoward(dim_model, dim_ff)
 
-        self.layernorm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
-        self.layernorm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layer_norm1 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
+        self.layer_norm2 = tf.keras.layers.LayerNormalization(epsilon=1e-6)
 
-        self.dropout1 = tf.keras.layers.Dropout(rate)
-        self.dropout2 = tf.keras.layers.Dropout(rate)
+        self.dropout_layer1 = tf.keras.layers.Dropout(dropout_rate)
+        self.dropout_layer2 = tf.keras.layers.Dropout(dropout_rate)
 
-    def call(self, x, training, mask):
-        attn_output, _ = self.mha(x, x, x, mask)  # (batch_size, input_seq_len, d_model)
-        attn_output = self.dropout1(attn_output, training=training)
-        out1 = self.layernorm1(x + attn_output)  # (batch_size, input_seq_len, d_model)
+    def call(self, x, training=True, mask=None):
 
-        ffn_output = self.ffn(out1)  # (batch_size, input_seq_len, d_model)
-        ffn_output = self.dropout2(ffn_output, training=training)
-        out2 = self.layernorm2(out1 + ffn_output)  # (batch_size, input_seq_len, d_model)
+        # Self attention
+        self_attn_output = self.self_mha(x, x, x, mask)  # (batch_size, input_seq_len, dim_model)
+        self_attn_output = self.dropout_layer1(self_attn_output, training=training)
 
-        return out2
+        # Add and norm 1
+        attention_norm = self.layer_norm1(x + self_attn_output)  # (batch_size, input_seq_len, dim_model)
+
+        ffn_output = self.ffn(attention_norm)  # (batch_size, input_seq_len, dim_model)
+        ffn_output = self.dropout_layer2(ffn_output, training=training)
+
+        # Add and norm 2
+        encoded = self.layer_norm2(attention_norm + ffn_output)  # (batch_size, input_seq_len, dim_model)
+
+        return encoded

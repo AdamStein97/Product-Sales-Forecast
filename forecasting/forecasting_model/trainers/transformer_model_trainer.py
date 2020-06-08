@@ -6,10 +6,10 @@ import forecasting as f
 import os
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, d_model, warmup_steps=1000):
+    def __init__(self, dim_model, warmup_steps=1000):
         super(CustomSchedule, self).__init__()
 
-        self.d_model = d_model
+        self.d_model = dim_model
         self.d_model = tf.cast(self.d_model, tf.float32)
 
         self.warmup_steps = warmup_steps
@@ -21,12 +21,12 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
 
 class TransformerModelTrainer():
-    def __init__(self, d_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None,
+    def __init__(self, dim_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None, warmup_steps=1000,
                  beta_1=0.9, beta_2=0.98, epsilon=1e-9, model_name='transformer_forecasting', **kwargs):
         if lr is None:
-            lr = CustomSchedule(d_model)
+            lr = CustomSchedule(dim_model, warmup_steps)
 
-        self.model = ForecastTransformer(d_model=d_model, **kwargs)
+        self.model = ForecastTransformer(dim_model=dim_model, **kwargs)
         self.loss_func = loss_func
         self.optimizer = optimizer(lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
         self.window_out = window_out
@@ -42,7 +42,7 @@ class TransformerModelTrainer():
         look_ahead_mask = create_look_ahead_mask(self.window_out)
 
         with tf.GradientTape() as tape:
-            predictions, _ = self.model(x,
+            predictions = self.model(x,
                                          training=True,
                                          look_ahead_mask=look_ahead_mask)
             loss = self.loss_func(y,predictions)
@@ -56,7 +56,7 @@ class TransformerModelTrainer():
     def eval_step(self, x, y):
         look_ahead_mask = create_look_ahead_mask(self.window_out)
 
-        predictions, _ = self.model(x,
+        predictions = self.model(x,
                                     training=True,
                                     look_ahead_mask=look_ahead_mask)
         loss = self.loss_func(y, predictions)
