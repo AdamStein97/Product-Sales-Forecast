@@ -3,6 +3,7 @@ import time
 from forecasting.forecasting_model.tf_models.transformer_forecast_model import ForecastTransformer
 from forecasting.utils import create_look_ahead_mask
 import forecasting as f
+import os
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
     def __init__(self, d_model, warmup_steps=1000):
@@ -21,7 +22,7 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
 
 class TransformerModelTrainer():
     def __init__(self, d_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None,
-                 beta_1=0.9, beta_2=0.98, epsilon=1e-9, **kwargs):
+                 beta_1=0.9, beta_2=0.98, epsilon=1e-9, model_name='transformer_forecasting', **kwargs):
         if lr is None:
             lr = CustomSchedule(d_model)
 
@@ -34,7 +35,7 @@ class TransformerModelTrainer():
 
         self.val_loss = tf.keras.metrics.Mean(name='val_loss')
 
-        self.val_loss_no_correction = tf.keras.metrics.Mean(name='val_loss_no_correction')
+        self.model_name = model_name
 
     @tf.function
     def train_step(self, x, y):
@@ -66,7 +67,7 @@ class TransformerModelTrainer():
         ckpt = tf.train.Checkpoint(transformer=self.model,
                                    optimizer=self.optimizer)
 
-        ckpt_manager = tf.train.CheckpointManager(ckpt, f.MODEL_DIR, max_to_keep=5)
+        ckpt_manager = tf.train.CheckpointManager(ckpt, os.path.join(f.MODEL_DIR, self.model_name), max_to_keep=5)
 
         for epoch in range(epochs):
             start = time.time()
@@ -85,12 +86,6 @@ class TransformerModelTrainer():
 
             print('Epoch {} Val Loss {:.4f}'.format(
                 epoch + 1, self.val_loss.result()))
-
-            # for (batch, (x, y)) in enumerate(test_dataset.take(20)):
-            #   eval_step(x, y)
-
-            # print ('Epoch {} Val Loss {:.4f} Val Loss No Correction {:.4f} '.format(
-            #       epoch + 1, val_loss.result(), val_loss_no_correction.result()))
 
             if (epoch + 1) % 3 == 0:
                 ckpt_save_path = ckpt_manager.save()
