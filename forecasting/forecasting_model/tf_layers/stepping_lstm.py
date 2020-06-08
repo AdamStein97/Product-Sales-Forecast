@@ -6,7 +6,11 @@ class SteppingLSTM(tf.keras.layers.Layer):
         if lstm_hidden_dims is None:
             lstm_hidden_dims = [256]
 
-        self.state_dims = [(batch_size, lstm_hidden_dim * (bidirectional + 1)) for lstm_hidden_dim in lstm_hidden_dims]
+        # self.state_dims = []
+        # for dim in lstm_hidden_dims:
+        #     self.state_dims.append((batch_size, dim * (bidirectional + 1)))
+        self.state_dims = [(batch_size, dim * (bidirectional + 1)) for dim in lstm_hidden_dims]
+        #self.state_dims = [(batch_size, lstm_hidden_dims[0] * (bidirectional + 1)) for dim in lstm_hidden_dims]
 
         self.bidirectional = bidirectional
         if bidirectional:

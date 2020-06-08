@@ -1,5 +1,16 @@
 import tensorflow as tf
 import numpy as np
+import yaml
+import forecasting as f
+import os
+
+def load_config(master_config_name='master_config.yaml', model_config_name='vanilla_model_config.yaml'):
+    with open(os.path.join(f.CONFIG_DIR, master_config_name)) as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+    with open(os.path.join(f.CONFIG_DIR, model_config_name)) as file:
+        model_config = yaml.load(file, Loader=yaml.FullLoader)
+    config.update(model_config)
+    return config
 
 def create_look_ahead_mask(size):
   mask = 1 - tf.linalg.band_part(tf.ones((size, size)), -1, 0)

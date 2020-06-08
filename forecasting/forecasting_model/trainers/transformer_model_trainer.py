@@ -20,13 +20,14 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
 
 class TransformerModelTrainer():
-    def __init__(self, window_out=30, loss_func=tf.keras.losses.mse, optimizer=None, d_model=128, **kwargs):
-        if optimizer is None:
-            optimizer = CustomSchedule(d_model)
+    def __init__(self, d_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None,
+                 beta_1=0.9, beta_2=0.98, epsilon=1e-9, **kwargs):
+        if lr is None:
+            lr = CustomSchedule(d_model)
 
         self.model = ForecastTransformer(d_model=d_model, **kwargs)
         self.loss_func = loss_func
-        self.optimizer = optimizer
+        self.optimizer = optimizer(lr, beta_1=beta_1, beta_2=beta_2, epsilon=epsilon)
         self.window_out = window_out
 
         self.train_loss = tf.keras.metrics.Mean(name='train_loss')
@@ -43,7 +44,7 @@ class TransformerModelTrainer():
             predictions, _ = self.model(x,
                                          training=True,
                                          look_ahead_mask=look_ahead_mask)
-            loss = self.loss_func(y, tf.squeeze(predictions))
+            loss = self.loss_func(y,predictions)
 
         gradients = tape.gradient(loss, self.model.trainable_variables)
         self.optimizer.apply_gradients(zip(gradients, self.model.trainable_variables))
@@ -57,7 +58,7 @@ class TransformerModelTrainer():
         predictions, _ = self.model(x,
                                     training=True,
                                     look_ahead_mask=look_ahead_mask)
-        loss = self.loss_func(y, tf.squeeze(predictions))
+        loss = self.loss_func(y, predictions)
 
         self.val_loss(loss)
 

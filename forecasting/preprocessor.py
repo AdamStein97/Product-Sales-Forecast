@@ -26,7 +26,8 @@ class Preprocessor():
     @tf.function
     def preprocess_series(self, series, **kwargs):
         norm_series = self.normalise_series(series)
-        ds = tf.data.Dataset.from_tensor_slices(norm_series)
+        norm_series_expanded = tf.expand_dims(norm_series, axis=-1)
+        ds = tf.data.Dataset.from_tensor_slices(norm_series_expanded)
         ds = self._make_window_dataset(ds, **kwargs)
         return ds
 
