@@ -1,0 +1,2 @@
+model_checkpoint_path: "dense_decoder_forecasting.ckpt"
+all_model_checkpoint_paths: "dense_decoder_forecasting.ckpt"
