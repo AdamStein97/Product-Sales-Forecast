@@ -31,8 +31,14 @@ class Preprocessor():
         ds = self._make_window_dataset(ds, **kwargs)
         return ds
 
-    def preprocess_predict_series(self, series):
-        return np.expand_dims(np.expand_dims(series, axis=-1), axis=0)
+    @staticmethod
+    def preprocess_predict_series(series, window_in, batch_size, **kwargs):
+        series_window = series[-window_in:]
+        mean = np.mean(series_window)
+        std = np.std(series_window)
+        norm_series = (series_window - mean) / std
+        preprocessed_series = tf.cast(tf.expand_dims(tf.expand_dims(norm_series, axis=-1), axis=0), tf.float32)
+        return tf.broadcast_to(preprocessed_series, [batch_size, window_in, 1]), mean, std
 
     def form_datasets(self, df, num_test_series=200, shuffle_buffer_size=2048, batch_size=128, **kwargs):
         dataset = tf.data.Dataset.from_tensor_slices(df.values.astype(float)).shuffle(shuffle_buffer_size)

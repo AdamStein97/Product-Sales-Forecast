@@ -1,18 +1,10 @@
-import forecasting as f
 from forecasting.preprocessor import Preprocessor
-from forecasting.forecasting_model.trainers.seq2seq_model_trainer import Seq2SeqTrainer
-from forecasting.forecasting_model.trainers.vanilla_model_trainer import VanillaTrainer
-from forecasting.forecasting_model.trainers.transformer_model_trainer import TransformerModelTrainer
+import numpy as np
 
-def predict(model_type, trained_model, input_data):
+def predict(trained_model, input_data, **kwargs):
     preprocessor = Preprocessor()
-    model_input = preprocessor.preprocess_predict_series(input_data)
+    model_input, mean, std = preprocessor.preprocess_predict_series(input_data, **kwargs)
 
-    trainer_obj_dict = {
-        f.VANILLA_MODEL_NAME: VanillaTrainer,
-        f.SEQ2SEQ_MODEL_NAME: Seq2SeqTrainer,
-        f.TRANSFORMER_MODEL_NAME: TransformerModelTrainer
-    }
-    trainer = trainer_obj_dict[model_type]()
-    out = trainer.predict(trained_model, model_input).numpy()[0]
-    return out
+    pred = np.squeeze(trained_model(model_input).numpy()[0])
+    transformed_pred = pred * std + mean
+    return transformed_pred

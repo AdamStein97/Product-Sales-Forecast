@@ -4,9 +4,10 @@ from forecasting.forecasting_model.tf_models.transformer_forecast_model import F
 from forecasting.utils import create_look_ahead_mask
 import forecasting as f
 import os
+import datetime
 
 class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
-    def __init__(self, dim_model, warmup_steps=1000):
+    def __init__(self, dim_model, warmup_steps=4000):
         super(CustomSchedule, self).__init__()
 
         self.d_model = dim_model
@@ -21,7 +22,7 @@ class CustomSchedule(tf.keras.optimizers.schedules.LearningRateSchedule):
         return tf.math.rsqrt(self.d_model) * tf.math.minimum(arg1, arg2)
 
 class TransformerModelTrainer():
-    def __init__(self, dim_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None, warmup_steps=1000,
+    def __init__(self, dim_model=128, window_out=30, loss_func=tf.keras.losses.mse, optimizer=tf.keras.optimizers.Adam, lr=None, warmup_steps=4000,
                  beta_1=0.9, beta_2=0.98, epsilon=1e-9, model_name='transformer_forecasting', **kwargs):
         if lr is None:
             lr = CustomSchedule(dim_model, warmup_steps)
@@ -63,11 +64,18 @@ class TransformerModelTrainer():
 
         self.val_loss(loss)
 
-    def train_loop(self, train_dataset, test_dataset, epochs=90, **kwargs):
+    def train_loop(self, train_dataset, test_dataset, epochs=90, log=True, **kwargs):
         ckpt = tf.train.Checkpoint(transformer=self.model,
                                    optimizer=self.optimizer)
 
         ckpt_manager = tf.train.CheckpointManager(ckpt, os.path.join(f.MODEL_DIR, self.model_name), max_to_keep=5)
+
+        if log:
+            current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            train_log_dir = os.path.join(f.LOG_DIR, self.model_name) + current_time + '/train'
+            val_log_dir =  os.path.join(f.LOG_DIR, self.model_name) + current_time + '/val'
+            train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+            val_summary_writer = tf.summary.create_file_writer(val_log_dir)
 
         for epoch in range(epochs):
             start = time.time()
@@ -92,12 +100,13 @@ class TransformerModelTrainer():
                 print('Saving checkpoint for epoch {} at {}'.format(epoch + 1,
                                                                     ckpt_save_path))
 
+            if log:
+                with train_summary_writer.as_default():
+                    tf.summary.scalar('loss', self.train_loss.result(), step=epoch)
+                with val_summary_writer.as_default():
+                    tf.summary.scalar('val_loss', self.val_loss.result(), step=epoch)
+
             self.train_loss.reset_states()
             self.val_loss.reset_states()
             print('Time taken for 1 epoch {} sec\n'.format(time.time() - start))
         return self.model
-
-    def predict(self, trained_model, model_input):
-        return trained_model(model_input)
-
-
