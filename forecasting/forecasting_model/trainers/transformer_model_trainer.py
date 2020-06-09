@@ -65,7 +65,7 @@ class TransformerModelTrainer():
         self.val_loss(loss)
 
     def train_loop(self, train_dataset, test_dataset, epochs=90, log=True, **kwargs):
-        ckpt = tf.train.Checkpoint(transformer=self.model,
+        ckpt = tf.train.Checkpoint(model=self.model,
                                    optimizer=self.optimizer)
 
         ckpt_manager = tf.train.CheckpointManager(ckpt, os.path.join(f.MODEL_DIR, self.model_name), max_to_keep=5)

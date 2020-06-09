@@ -20,6 +20,4 @@ class VanillaTrainer():
                   epochs=epochs, callbacks=[self.cp_callback])
         return self.model
 
-    def predict(self, trained_model, model_input):
-        return trained_model(model_input)
 

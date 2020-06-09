@@ -8,17 +8,24 @@ individual products a month into the future.
 - __Seq2Seq__: Convolution, max pooling and LSTM encoder, decoded by a LSTM
 - __Transformer__: Convolution, max pooling followed by Transformer encoder and decoder
 
-## 1. Data
+## 1. Data & Preprocessing
 
-Contains 1941 days of unit sales in Wallmart stores for over 3000 unique products. A handful
+The data consists of 1941 days of unit sales in Wallmart stores for over 3000 unique products. A handful
 of products have been removed from `wallmart_item_sales.csv` into `sample_test_data.csv` to
 illustrate predictions of trained models. During training, 200 random products are placed into a validation dataset.
 
 The preprocessor creates multiple training examples per product by sliding a window over the history. The default
 window size is 400 days of input to produce the 30 day forecast. This start of the window is shifted 200 days into the future
-after each training example is generated.
+after each training example is generated. 
 
-## 2. Implementation Details
+Prepocessing is done using the `tf.data` library to produce an optimised input 
+pipeline. A Tensorflow graph is produced which can execute multiple parts of the 
+pipeline in parallel for efficient processing. This code can be found in `preprocessor.py`.
+
+`tf.data` Pipeline Performance Guide: https://www.tensorflow.org/guide/data_performance
+
+
+## 2. Model Implementation Details
 
 ### 2.1 Vanilla Model
 
@@ -37,6 +44,23 @@ as the state of the LSTM from the previous step. During training, teacher forcin
 instead of stepping using the previous prediction, the ground truth at the previous time step is used as input.
 
 ### 2.3 Transformer Model
+
+Multiple layers of convolution and max pooling are used to increase the dimensionality of the input 
+by encoding some spatial features as well as reducing the length of the sequence. A transformer encoder-decoder
+network is then used to encode the shortened sequence using self attention and then decode the output into
+a 30 day forecast. 
+
+Commonly, teacher forcing is used in the decoder through the use of a look-ahead mask.
+Through experimentation, I found this ineffective for product sales forecasting. 
+The model struggled when producing forecasts one time step at a time when the future was unknown.
+Most likely this was because the volatile nature of the time series made it difficult to produce a 
+forecast recursively; this would explain why the vanilla approach which produces the whole forecast at once
+performed better than the Seq2Seq model (see section 8). 
+
+The implementation in this library feeds zeros as input to the decoder with positional
+encodings then added. When forecasts are being performed for data with an unknown future,
+the process of prediction is now the same as during the training procedure and this proved 
+far more effective.
 
 ## 3. Install
 
@@ -60,7 +84,7 @@ Predict:
 
 ## 5. Produced Forecasts
 
-A number of example generated forecasts for each architectures can be found in the generated_forecasts directory.
+A few examples of generated forecasts for unseen data using each architectures can be found in the generated_forecasts directory.
 
 ## 6. Project Structure
 
@@ -84,4 +108,10 @@ __saved_models__: Saved model weights
 - __train__: Function to train models
 - __utils__:  Extra utility functions
 
-## 8. References
+## 8. Performance
+
+| Architecture  | Train Loss  | Validation Loss  |
+|---|---|---|
+| Vanilla  |   |   |
+| Seq2Seq  |  0.34 | 0.49  |
+| Transformer  |  0.41 | 0.42  | 
