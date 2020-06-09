@@ -26,6 +26,8 @@ def visualise_prediction(history, true_forecast, model_prediction, save_name=Non
     plt.plot(correct, label='Correct', alpha=0.5)
     plt.axvline(len(history), c='black', label='Start Forecast', linestyle='dashed')
     plt.legend()
+    plt.ylabel("Sold Units")
+    plt.xlabel("Day")
     if save_name is not None:
         plt.savefig(os.path.join(f.VIS_DIR, save_name))
     plt.show()

@@ -1,6 +1,6 @@
 # Product Sales Forecasting
 
-Three different machine learning architectures designed to forecast the daily sales of 
+Three different deep learning architectures designed to forecast the daily sales of 
 individual products a month into the future.
 
 ### Architectures:
