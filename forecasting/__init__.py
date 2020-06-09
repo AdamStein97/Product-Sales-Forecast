@@ -13,11 +13,3 @@ SEQ2SEQ_MODEL_NAME = "SEQ2SEQ"
 TRANSFORMER_MODEL_NAME = "TRANSFORMER"
 
 tf.random.set_seed(99)
-
-#TODO:
-# saved models
-# brief comments
-# save logs
-# save example forecasts
-# write readme
-# save logs for trained models

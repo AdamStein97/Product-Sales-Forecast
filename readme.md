@@ -112,6 +112,6 @@ __saved_models__: Saved model weights
 
 | Architecture  | Train Loss  | Validation Loss  |
 |---|---|---|
-| Vanilla  |   |   |
-| Seq2Seq  |  0.34 | 0.49  |
+| Vanilla  |  0.34 | 0.38  |
+| Seq2Seq  |  0.34 (with teacher forcing) | 0.49 (no teacher forcing)|
 | Transformer  |  0.41 | 0.42  | 
