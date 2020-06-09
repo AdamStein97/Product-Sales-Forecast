@@ -38,7 +38,7 @@ the sequence and produce the 30 day forecast.
 
 Multiple layers of convolution and max pooling are used to increase the dimensionality of the input 
 by encoding some spatial features as well as reducing the length of the sequence. The shortened sequence
-is then fed through a LSTM to produce an encoding of the history. A decoder LSTM a prediction 
+is then fed through a LSTM to produce an encoding of the history. A decoder LSTM makes a prediction 
 one time step at a time by taking in the previous prediction (embedded to a high dimension using a dense layer) as well
 as the state of the LSTM from the previous step. During training, teacher forcing is used to improve optimisation;
 instead of stepping using the previous prediction, the ground truth at the previous time step is used as input.
@@ -88,13 +88,13 @@ A few examples of generated forecasts for unseen data using each architectures c
 
 ## 6. Project Structure
 
-__config__: Yaml files with configurations for models and input data
-__data__: Csv files of product sales data
-__examples__: Examples of how to effectively use the library
-__forecasting__: Library
-__generated_forecasts__: Saved visualisations of generated forecasts by the different architectures
-__logs__: Saved training logs
-__saved_models__: Saved model weights
+- __config__: Yaml files with configurations for models and input data
+- __data__: Csv files of product sales data
+- __examples__: Examples of how to effectively use the library
+- __forecasting__: Library
+- __generated_forecasts__: Saved visualisations of generated forecasts by the different architectures
+- __logs__: Saved training logs
+- __saved_models__: Saved model weights
 
 ## 7. Library Structure
 
@@ -110,7 +110,7 @@ __saved_models__: Saved model weights
 
 ## 8. Performance
 
-| Architecture  | Train Loss  | Validation Loss  |
+| Architecture  | Train MSE  | Validation MSE  |
 |---|---|---|
 | Vanilla  |  0.34 | 0.38  |
 | Seq2Seq  |  0.34 (with teacher forcing) | 0.49 (no teacher forcing)|
